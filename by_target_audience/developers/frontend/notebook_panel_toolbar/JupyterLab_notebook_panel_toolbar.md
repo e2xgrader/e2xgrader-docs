@@ -46,7 +46,7 @@ The implementation (factory) of each kind of toolbar item needs to be registered
 Most factories of the default toolbar items are registered in the [notebook-extension](https://github.com/jupyterlab/jupyterlab/blob/9287d9d4e237d0616ede24f9e66ad49ede1afa03/packages/notebook-extension/src/index.ts#L1276C1-L1276C10).
 Most of these factories implement toolbar items with unique functionalities like changing the cell-type or displaying the current execution status.
 The `name` attribute from the JSON schema is used to differentiate between the different kind of items and their corresponding factory.
-All names, that do exactly match a factory, are handled by the [ToolbarFactory](https://github.com/jupyterlab/jupyterlab/blob/9287d9d4e237d0616ede24f9e66ad49ede1afa03/packages/apputils/src/toolbar/factory.ts#L251).
+All names, that do exactly match a factory, are handled by the [default factory](https://github.com/jupyterlab/jupyterlab/blob/9287d9d4e237d0616ede24f9e66ad49ede1afa03/packages/apputils/src/toolbar/registry.ts#L129) of the ToolbarWidgetRegistry (inside `@jupterlab/apputils`).
 This factory toolbar items, that are meant be reuesed multiple times. They are configured with the attributes from the JSON schema.
 By default, the ToolbarFactory implements a command-button item and a spacer item. They are diffetiated by the `type` attribute
 and gernerally configured via the JSON schema.
