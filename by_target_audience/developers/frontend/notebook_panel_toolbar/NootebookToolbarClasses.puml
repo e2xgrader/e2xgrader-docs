@@ -1,0 +1,173 @@
+@startuml
+set namespaceSeparator ::
+
+package lumino{
+    class widgets::Widget
+    interface signaling::ISignal
+}
+
+package jupyterlab{
+    package codeeditor{
+        interface CodeEditor.IModel
+    }
+
+    package uiComponents{
+        class ToolbarLayout extends lumino::widgets::PanelLayout {
+            #onFitRequest(msg: Message)
+            #onUpdateRequest(msg: Message)
+            #onChildShown(msg: lumino::widgets::Widget.ChildMessage)
+            #onChildHidden(msg: lumino::widgets::Widget.ChildMessage)
+            #onBeforeAttach(msg: Message)
+            #attachWidget(index: number, widget: lumino::widgets::Widget)
+            #detachWidget(index: number, widget: lumino::widgets::Widget)
+        }
+        class Toolbar<T extends lumino::widgets::Widget> extends lumino::widgets::Widget{
+            names: IterableIterator<sting>
+            addItem(name: string, widget: T): boolean
+            insertItem(index: number, name: string, widget: T): boolean
+            insertAfter(at: string, name: sting, widget: T): boolean
+            insertBefore(at: string, name: string, widget: T): boolean
+            #insertRelative(at: string, offset: number, name: string, widget: T): boolean
+            handleEvent(event: Event)
+            #handleClick(event: Event)
+            #onAfterAttach(msg: Message)
+            #onBeforeDetach(msg: Message)
+        }
+        class ReactiveToolbar extends Toolbar<lumino::widgets::Widget>{
+            dispose()
+            insertAfter(at: string, name: string, widget: lumino::widgets::Widget): boolean
+            #insertRelative(at: string, offset: number, name: string, widget: lumino::widgets::Widget): boolean
+            insertItem(index: number, name: string, widget: lumino::widgets::Widget): boolean
+            onAfterShow(msg: Message)
+            onBeforeHide(msg: Message)
+            #onResize(msg: Widget.ResizeMessage)
+        }
+        interface WindowedList.IModel
+        class WindowedList<T extends WindowedList.IModel, U>
+        class WindowedListModel implements WindowedList.IModel
+        class ReactWidget extends lumino::widgets::Widget
+        class ToolbarButton extends ReactWidget{
+            set pressed(value: boolean)
+            get pressed(): boolean
+            set enabled(value: boolean)
+            get enabled(): boolean
+            set onClick(value: () => void)
+            get onClick(): (event?: React.SyntheticEvent) => void
+            render(): JSX.Element
+        }
+        class CommandToolbarButton extends ReactWidget{
+            #setCommandAttributes(commands: lumino::commands::CommandRegistry, id: string, args: ReadonlyJSONObject | undefined)
+            render(): JSX.Element
+            get commandId(): string
+        }
+        class ToolbarPopup extends lumino::widgets::Widget{
+            updateWidth(width: number)
+            alignTo(widget: lumino::widgets::Widget)
+            insertWidget(widget: lumino::widgets::Widget)
+            widgetCount(): number
+            widgetAt(index: number): lumino::widgets::Widget | undefined
+        }
+        class ToolbarPopupOpener extends ToolbarButton{
+            addWidget(widget: lumino::widgets::Widget)
+            insertWidget(index: number, widget: lumino::widgets::Widget)
+            dispose()
+            hide()
+            hidePopup()
+            updatePopup()
+            widgetAt(index: number): lumino::widgets::Widget | undefined
+            widgetCount(): number
+            #handleClick()
+            #popup: ToolbarPopup
+        }
+    }
+
+    package settingregistry{
+        interface ISettingRegistry.IToolbarItem extends lumino::coreutils::PartialJSONObject
+    }
+
+    package apputils {
+        class MainAreaWidget extends lumino::widgets::Widget {
+            _toolbar: Toolbar
+            get toolbar(): Toolbar
+        }
+        interface IToolbarWidgetRegistry{
+            addFactory<T extends lumino::widgets::Widget>(widgetFactory: string, toolbarItemName: string, factory: (main: T) => lumino::widgets::Widget): ((main: T) => lumino::widgets::Widget) | undefined
+            defaultFactory: (widgetFactory: string, widget: lumino::widgets::Widget, toolbarItem: ToolbarRegistry.IWidget) => lumino::widgets::Widget
+            createWidget(widgetFactory: string, widget: lumino::widgets::Widget, toolbarItem:: ToolbarRegistry.IWidget):: lumino::widgets::Widget
+            factoryAdded: lumino::signaling::ISignal<IToolbarWidgetRegistry, string>
+        }
+        interface IToolbarRegistry.IWidget extends jupyterlab::settingregistry::ISettingRegistry.IToolbarItem
+        interface IToolbarRegistry.IToolbarItem extends jupyterlab::rendermime::ISettingRegistry.IRenderMime.IToolbarItem
+        interface IToolbarRegistry.IOptions{
+            defaultFactory: (widgetFactory: string, widget: lumino::widgets::Widget, toolbar: IWidget) => lumino::widgets::Widget
+        }
+        class ToolbarWidgetRegistry implements IToolbarWidgetRegistry {
+            get defaultFactory(): (widgetFactory: string, widget: lumino::widgets::Widget, toolbarItem: ToolbarRegistry.IWidget))
+            set defaultFactory(factory: (widgetFactory: string, widget: lumino::widgets::Widget, toolbar: IWidget) => lumino::widgets::Widget)
+            get factoryAdded(): lumino::signaling::ISignal<ToolbarWidgetRegistry, string>
+            createWidget(widgetFactory: string, widget: lumino::widgets::Widget, toolbarItem: ToolbarRegistry.IWidget): lumino::widgets::Widget
+            addFactory<T extends lumino::widgets::Widget>(widgetFactory: string, toolbarItemName: string, factory: (main: T) => lumino::widgets::Widget): ((main: T) => lumino::widgets::Widget) | undefined
+        }
+    }
+
+    package docregistry{
+        class DocumentWidget<T, U> extends jupyterlab::apputils::MainAreaWidget
+    }
+
+    package outputarea{
+        class OutputArea extends lumino::widgets::Widget
+        interface IContentFactory
+    }
+
+    package cells {
+        interface ICellModel extends jupyterlab::codeeditor::CodeEditor.IModel
+        class Cell<T extends ICellModel> extends lumino::widgets::Widget
+        interface Cell.IContentFactory extends jupyterlab::outputarea::OutputArea.IContentFactory, InputArea.IContentFactory
+    }
+
+    package notebook{
+        interface Notebook.IPastedCells
+        interface INotebookModel extends jupyterlab::docregistry::DocumentRegistry.IModel
+        class NotebookViewModel extends jupyterlab::uiComponents::WindowedListModel
+        interface StaticNotebook.IContentFactory extends jupyterlab::cells::Cell.IContentFactory
+        class StaticNotebook extends jupyterlab::uiComponents::WindowedList{
+            get cellCollapsed(): lumino::signaling::ISignal<StaticNotebook, jupyterlab::cells::Cell>
+            get cellInViewportChanged(): lumino::signaling::ISignal<StaticNotebook, jupyterlab::cells::Cell>
+            get modelChanged(): lumino::signaling::ISignal<StaticNotebook, void>
+            get modelContentChanged(): lumino::signaling::ISignal<StaticNotebook, void>
+            get renderingLayoutChanged(): lumino::signaling::ISignal<StaticNotebook, RenderingLayout>
+            contentFactory: StaticNotebook.IContentFactory {readOnly}
+            rendermime: jupyterlab::rendermime::IRenderMimeRegistry {readOnly}
+            translator: jupyterlab::translation::ITranslator {readOnly}
+            get model(): INotebookModel | null
+            set model(newValue: INotebookModel | null)
+            get codeMimetype(): string
+            get widgets(): ReadonlyArray<jupyterlab::cells:Cell>
+            ...
+        }
+        class Notebook extends StaticNotebook{
+            get selectedCells(): Cell[]
+            #addFooter()
+            get activeCellChanged(): lumino::signaling::ISignal<Notebook, Cell | null>
+            get stateChanged(): lumino::signaling::ISignal<Cell, IChangedArgs<any>>
+            get selectionChanged(): lumino::signaling::ISignal<Notebook, void>
+            get cellsPasted(): lumino::signaling::ISignal<Notebook, Notebook.IPastedCells>
+            get mode(): NotebookMode
+            set mode(): NotebookMode
+            #setMode(newValue: NotebookMode, options: {focus?: boolean})
+            get activeCellIndex(): number
+            set activeCellIndex(newValue: number)
+            get activeCell(): jupyterlab::cells::Cell | null
+            get lastClipboardInteraction(): 'copy' | 'cut' | 'paste' | null
+            set lastClipboardInteraction(newValue: 'copy' | 'cut' | 'paste' | null)
+            dispose()
+            moveCell(from: number, to: number, n = 1): void
+            select(widget: jupyterlab::cells::Cell)
+            deselect(widget: jupyterlab::cells::Cell)
+            ...
+        }
+        class NotebookPanel extends jupyterlab::docregistry::DocumentWidget
+    }
+}
+
+@enduml

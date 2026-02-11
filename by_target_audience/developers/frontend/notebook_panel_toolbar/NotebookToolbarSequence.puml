@@ -1,0 +1,18 @@
+@startuml
+    -> "@jupyterlab/notebook-extension:widget-factory": activate()
+    "@jupyterlab/notebook-extension:widget-factory" -> "toolbarRegistry: IToolbarWidgetRegistry": addFactory()
+    note right: done for each of the main toolbar widgets (save, cell type, kernel name and execution progress)
+    "@jupyterlab/notebook-extension:widget-factory" -> "@jupyterlab/notebook-extension:apputils toolbar/factory.ts": createToolbarFactory()
+    note right: this adds the remaining default toolbar items from the JSON schema
+    create "notebookWidgetFactory: NotebookWidgetFactory"
+    "@jupyterlab/notebook-extension:widget-factory" --> "notebookWidgetFactory: NotebookWidgetFactory": new
+    "@jupyterlab/notebook-extension:widget-factory" -> "notebookWidgetFactory: NotebookWidgetFactory": createNewWidget()
+    "notebookWidgetFactory: NotebookWidgetFactory" -> "contentFactory: NotebookPanel.IContentFactory": createNotebook()
+    create "_notebookPanel: NotebookPanel"
+    "notebookWidgetFactory: NotebookWidgetFactory" --> "_notebookPanel: NotebookPanel": new
+    opt options.toolbar === undefined
+        create "_toolbar: ReactiveToolbar"
+        "_notebookPanel: NotebookPanel" --> "_toolbar: ReactiveToolbar": new
+    end
+    "notebookWidgetFactory: NotebookWidgetFactory" --> "@jupyterlab/notebook-extension:widget-factory": return _notebookPanel
+@enduml
